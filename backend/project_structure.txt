@@ -1,0 +1,9 @@
+your-project/
+├── frontend/           (your existing files)
+│   ├── index.htm
+│   ├── app.js
+│   ├── style.css
+│   ├── translations.js
+│   └── assets/
+├── backend/            (NEW - we'll create this)
+└── kitchen-display/    (NEW - we'll create this)
