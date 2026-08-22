@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home • Zaatarito Restaurant</title>
+
+  <!-- Preload & Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="assets/img/logo.jpg" type="image/jpeg">
+
+  <!-- Load JavaScript Files -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="translations.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+
+<body>
+  <!-- Header with Logo & Language Switcher -->
+  <header class="restaurant-header">
+    <div class="logo-area">
+      <img src="assets/img/logo.jpg" alt="Zaatarito Restaurant Logo" class="restaurant-logo" width="60" height="60">
+      <div class="brand-info">
+        <h1 class="brand-title">Zaatarito</h1>
+        <span id="table-badge" class="table-badge">Table --</span>
+      </div>
+    </div>
+
+    <!-- Language Toggle Buttons & Track Order -->
+    <div class="header-actions">
+      <nav class="lang-switch" aria-label="Language selection">
+        <button id="lang-it" class="lang-btn active" aria-label="Seleziona Lingua Italiana" type="button">IT</button>
+        <button id="lang-en" class="lang-btn" aria-label="Select English Language" type="button">EN</button>
+      </nav>
+            
+      <!-- Table Orders Button - Shows only when table is assigned -->
+      <button id="table-orders-btn" class="table-orders-btn" type="button" style="display: none;">
+        📋 Table Orders
+      </button>
+    </div>
+  </header>
+
+  <div class="page-wrapper">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar sidebar-left" aria-label="Promozioni">
+      <div class="sidebar-content">
+        <!-- Top Manoushe Image -->
+        <img src="assets/img/Manoushe.png" alt="Offerta Speciale Manoushe" class="sidebar-img" loading="lazy">
+        
+        <!-- Format Gallery aligned with Specialità -->
+        <div class="sidebar-gallery specialita-gallery">
+          <img src="assets/img/Bite-Bag-real.png" alt="Bite Bag Real" class="sidebar-img-sub" loading="lazy">
+          <img src="assets/img/wrap-real.png" alt="Saj Roll Real" class="sidebar-img-sub" loading="lazy">
+          <img src="assets/img/plate-real.png" alt="Loaded Tagliere Real" class="sidebar-img-sub" loading="lazy">
+          <img src="assets/img/bowl-real.png" alt="Bowlè Real" class="sidebar-img-sub" loading="lazy">
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER MENU CONTAINER -->
+    <main class="menu-container">
+
+      <!-- INTRO SECTION: Rendered dynamically via app.js -->
+      <section class="intro-formats-section" id="intro-formats-section" aria-live="polite">
+        <!-- Rendered dynamically by app.js based on selected language -->
+      </section>
+
+      <!-- FEATURED BANNER SECTION (Golden Card Tagliere) -->
+      <section id="featured-banner-section" class="featured-banner-section" aria-live="polite">
+        <!-- Golden card rendered dynamically by renderFeaturedBanner() in app.js -->
+      </section>
+
+      <!-- DYNAMIC MENU SECTIONS -->
+      <section id="menu-sections" class="menu-grid" aria-live="polite">
+        <!-- Dynamic menu rendered here via app.js -->
+      </section>
+
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar sidebar-right" aria-label="Informazioni e Note">
+      <div id="sidebar-notes" class="sidebar-content">
+        <!-- Dynamic notes & vertical format legend rendered here -->
+      </div>
+    </aside>
+  </div>
+
+  <!-- Sticky Bottom Cart Bar -->
+  <footer class="cart-bar" role="region" aria-label="Riepilogo Carrello">
+    <div class="cart-details">
+      <span id="cart-count">0 elementi</span>
+      <span id="cart-total">0.00 €</span>
+    </div>
+    <button id="checkout-btn" class="checkout-btn" type="button" disabled>Vedi Ordine</button>
+  </footer>
+
+  <!-- Cart Modal Popup -->
+  <div id="cart-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Il Tuo Ordine</h2>
+        <button id="close-modal-btn" class="close-btn" aria-label="Chiudi Ordine" type="button">&times;</button>
+      </div>
+      
+      <div id="cart-items-list" class="cart-items-list">
+        <!-- Cart items rendered here by app.js -->
+      </div>
+
+      <div class="modal-footer">
+        <div class="modal-total-row">
+          <span id="modal-total-label">Totale:</span>
+          <span id="modal-total-price">0.00 €</span>
+        </div>
+        <button id="send-kitchen-btn" class="send-kitchen-btn" type="button">
+          Invia Ordine in Cucina 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ORDER TRACKING MODALS ==================== -->
+
+  <!-- Order Confirmation Popup -->
+  <div id="order-confirmation" class="confirmation-popup" hidden>
+    <div class="confirmation-content">
+      <div class="confirmation-icon">✅</div>
+      <h3>Order Placed Successfully!</h3>
+      <p id="confirmation-order-number">Order #ZA-XXXX-XXXX</p>
+      <p id="confirmation-message">Your order is being prepared. You can track its status below.</p>
+      <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+        <button id="track-order-btn" class="track-order-btn">📊 Track Order</button>
+        <button id="close-confirmation-btn" class="close-confirmation-btn">Continue Ordering</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Tracking Modal (from confirmation) -->
+  <div id="tracking-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tracking-title" hidden>
+    <div class="modal-content tracking-modal">
+      <div class="modal-header">
+        <h2 id="tracking-title">📦 Order Status</h2>
+        <button id="close-tracking-btn" class="close-btn" aria-label="Close Tracking" type="button">&times;</button>
+      </div>
+      
+      <div id="tracking-content">
+        <!-- Order tracking content rendered by app.js -->
+        <div style="text-align: center; padding: 2rem; color: #94a3b8;">
+          Loading order details...
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Table Orders Modal -->
+  <div id="table-orders-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="table-orders-title" hidden>
+    <div class="modal-content table-orders-modal">
+      <div class="modal-header">
+        <h2 id="table-orders-title">📋 My Table Orders</h2>
+        <button id="close-table-orders-btn" class="close-btn" aria-label="Close" type="button">&times;</button>
+      </div>
+      
+      <div id="table-orders-content">
+        <div id="table-orders-list">
+          <!-- Orders for this table will appear here -->
+          <div style="text-align: center; padding: 2rem; color: #94a3b8;">
+            Loading orders...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table detection Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tableNumber = urlParams.get('table');
+      const badge = document.getElementById('table-badge');
+      if (badge) {
+        badge.textContent = tableNumber ? `Table #${tableNumber}` : 'Takeout';
+      }
+    });
+  </script>
+</body>
+</html>

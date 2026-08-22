@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100%" height="100%">
+  <!-- Main Ka'ak Body -->
+  <path d="M 50 10 
+           C 70 10, 85 22, 92 45 
+           C 98 65, 96 90, 80 105 
+           C 65 118, 35 118, 20 105 
+           C 4 90, 2 65, 8 45 
+           C 15 22, 30 10, 50 10 Z" 
+        fill="#C58B43" 
+        stroke="#8D571C" 
+        stroke-width="2.5" />
+  
+  <!-- Handle Hole (Cutout) -->
+  <path d="M 50 24 
+           C 64 24, 74 32, 74 46 
+           C 74 54, 64 58, 50 58 
+           C 36 58, 26 54, 26 46 
+           C 26 32, 36 24, 50 24 Z" 
+        fill="#1a1c20" 
+        stroke="#8D571C" 
+        stroke-width="2" />
+
+  <!-- Sesame Seed Details -->
+  <g fill="#FBE6C2" opacity="0.85">
+    <ellipse cx="40" cy="70" rx="1.5" ry="3" transform="rotate(15 40 70)" />
+    <ellipse cx="55" cy="72" rx="1.5" ry="3" transform="rotate(-20 55 72)" />
+    <ellipse cx="30" cy="80" rx="1.5" ry="3" transform="rotate(10 30 80)" />
+    <ellipse cx="70" cy="78" rx="1.5" ry="3" transform="rotate(-15 70 78)" />
+    <ellipse cx="48" cy="85" rx="1.5" ry="3" transform="rotate(5 48 85)" />
+    <ellipse cx="62" cy="88" rx="1.5" ry="3" transform="rotate(-30 62 88)" />
+    <ellipse cx="35" cy="95" rx="1.5" ry="3" transform="rotate(25 35 95)" />
+    <ellipse cx="50" cy="100" rx="1.5" ry="3" transform="rotate(-10 50 100)" />
+    <ellipse cx="68" cy="95" rx="1.5" ry="3" transform="rotate(15 68 95)" />
+    <ellipse cx="22" cy="65" rx="1.5" ry="3" transform="rotate(-40 22 65)" />
+    <ellipse cx="78" cy="65" rx="1.5" ry="3" transform="rotate(35 78 65)" />
+    <ellipse cx="50" cy="18" rx="1.2" ry="2.5" transform="rotate(0 50 18)" />
+    <ellipse cx="35" cy="20" rx="1.2" ry="2.5" transform="rotate(-15 35 20)" />
+    <ellipse cx="65" cy="20" rx="1.2" ry="2.5" transform="rotate(15 65 20)" />
+  </g>
+</svg>

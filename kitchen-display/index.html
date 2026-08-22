@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zaatarito Kitchen Display</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+
+        .header h1 {
+            color: #facc15;
+            font-size: 2rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #connection-status {
+            font-size: 0.9rem;
+        }
+
+        .status-filters {
+            display: flex;
+            gap: 10px;
+        }
+
+        .status-filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #333;
+            background: transparent;
+            color: #94a3b8;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .status-filter-btn:hover,
+        .status-filter-btn.active {
+            border-color: #facc15;
+            color: #facc15;
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .order-card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 5px solid #facc15;
+            transition: transform 0.2s;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .order-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .order-card.pending { border-left-color: #facc15; }
+        .order-card.preparing { border-left-color: #3b82f6; }
+        .order-card.ready { border-left-color: #22c55e; }
+        .order-card.served { border-left-color: #6b7280; opacity: 0.7; }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .order-number {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #facc15;
+        }
+
+        .order-time {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .order-details {
+            margin: 15px 0;
+        }
+
+        .order-details p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin: 5px 0;
+        }
+
+        .order-items {
+            list-style: none;
+            margin: 15px 0;
+            padding: 15px;
+            background: #0a0a0a;
+            border-radius: 8px;
+        }
+
+        .order-items li {
+            padding: 8px 0;
+            border-bottom: 1px solid #222;
+            display: flex;
+            justify-content: space-between;
+            color: #e2e8f0;
+        }
+
+        .order-items li:last-child {
+            border-bottom: none;
+        }
+
+        .order-total {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #facc15;
+            text-align: right;
+            margin: 10px 0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-badge.pending { background: #facc15; color: #000; }
+        .status-badge.preparing { background: #3b82f6; color: #fff; }
+        .status-badge.ready { background: #22c55e; color: #fff; }
+        .status-badge.served { background: #6b7280; color: #fff; }
+
+        .order-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 100px;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-btn.prepare { 
+            background: #3b82f6; 
+            color: #fff;
+        }
+
+        .action-btn.prepare:hover { background: #2563eb; }
+
+        .action-btn.ready { 
+            background: #22c55e; 
+            color: #fff;
+        }
+
+        .action-btn.ready:hover { background: #16a34a; }
+
+        .action-btn.served { 
+            background: #6b7280; 
+            color: #fff;
+        }
+
+        .action-btn.served:hover { background: #4b5563; }
+
+        .no-orders {
+            text-align: center;
+            padding: 60px;
+            color: #94a3b8;
+            font-size: 1.2rem;
+        }
+
+        /* New order notification */
+        .notification-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #facc15;
+            color: #000;
+            padding: 20px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: slideInRight 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-right {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .status-filters {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👨‍🍳 Kitchen Display</h1>
+        <div class="header-right">
+            <span id="connection-status" style="color: #22c55e;">● Connected</span>
+            <div class="status-filters">
+                <button class="status-filter-btn active" data-filter="all">All</button>
+                <button class="status-filter-btn" data-filter="pending">🟡 Pending</button>
+                <button class="status-filter-btn" data-filter="preparing">🔵 Preparing</button>
+                <button class="status-filter-btn" data-filter="ready">🟢 Ready</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ordersContainer" class="orders-grid">
+        <div class="no-orders">Loading orders...</div>
+    </div>
+
+    <audio id="orderSound" preload="auto">
+        <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        let currentFilter = 'all';
+        const ordersContainer = document.getElementById('ordersContainer');
+        const orderSound = document.getElementById('orderSound');
+        const statusEl = document.getElementById('connection-status');
+
+        // Authentication PIN
+        const KITCHEN_PIN = '1234';
+
+        // Connect to server
+        const socket = io('http://localhost:5000', {
+            path: '/socket.io/'
+        });
+
+        // Filter buttons
+        document.querySelectorAll('.status-filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                filterOrders();
+            });
+        });
+
+        function filterOrders() {
+            const cards = document.querySelectorAll('.order-card');
+            cards.forEach(card => {
+                if (currentFilter === 'all' || card.classList.contains(currentFilter)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            statusEl.textContent = '● Connected';
+            statusEl.style.color = '#22c55e';
+            socket.emit('authenticateKitchen', KITCHEN_PIN);
+        });
+
+        socket.on('kitchenAuthenticated', (data) => {
+            if (data.success) {
+                console.log('✅ Kitchen authenticated');
+                socket.emit('getActiveOrders');
+            } else {
+                console.error('❌ Kitchen authentication failed:', data.error);
+                statusEl.textContent = '● Authentication Failed';
+                statusEl.style.color = '#ef4444';
+            }
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            statusEl.textContent = '● Disconnected';
+            statusEl.style.color = '#ef4444';
+        });
+
+        socket.on('orderReceived', (order) => {
+            console.log('New order received:', order);
+            addOrderToDisplay(order);
+            showNotification(`🔔 New Order #${order.orderNumber}`);
+            playSound();
+        });
+
+        socket.on('orderStatusUpdated', (data) => {
+            console.log('Order status updated:', data);
+            updateOrderStatus(data.orderId, data.status);
+        });
+
+        socket.on('activeOrders', (orders) => {
+            console.log('Active orders:', orders);
+            if (orders.length === 0) {
+                ordersContainer.innerHTML = `
+                    <div class="no-orders">🎉 No active orders. Waiting for new orders...</div>
+                `;
+            } else {
+                ordersContainer.innerHTML = '';
+                orders.forEach(order => addOrderToDisplay(order));
+                filterOrders();
+            }
+        });
+
+        function addOrderToDisplay(order) {
+            const noOrders = ordersContainer.querySelector('.no-orders');
+            if (noOrders) noOrders.remove();
+
+            const orderCard = createOrderCard(order);
+            ordersContainer.prepend(orderCard);
+            filterOrders();
+        }
+
+        function createOrderCard(order) {
+            const div = document.createElement('div');
+            div.className = `order-card ${order.status}`;
+            div.id = `order-${order._id || order.id}`;
+
+            const itemsHTML = (order.items || []).map(item => `
+                <li>
+                    <span>${item.quantity || 1}x ${item.name}</span>
+                    <span>€${(item.price * (item.quantity || 1)).toFixed(2)}</span>
+                </li>
+            `).join('');
+
+            const statusLabels = {
+                pending: '🟡 Pending',
+                preparing: '🔵 Preparing',
+                ready: '🟢 Ready',
+                served: '⚪ Served'
+            };
+
+            const actionButtons = getActionButtons(order._id || order.id, order.status);
+
+            div.innerHTML = `
+                <div class="order-header">
+                    <span class="order-number">#${order.orderNumber}</span>
+                    <span class="status-badge ${order.status}">${statusLabels[order.status] || order.status}</span>
+                </div>
+                <div class="order-details">
+                    <p>Table: ${order.tableNumber || 'Takeout'}</p>
+                    <p>Time: ${new Date(order.orderTime).toLocaleTimeString()}</p>
+                </div>
+                <ul class="order-items">${itemsHTML}</ul>
+                <div class="order-total">Total: €${order.totalAmount.toFixed(2)}</div>
+                ${order.specialRequests ? `<p style="color: #94a3b8; font-style: italic; margin: 10px 0;">📝 Notes: ${order.specialRequests}</p>` : ''}
+                <div class="order-actions">
+                    ${actionButtons}
+                </div>
+            `;
+
+            return div;
+        }
+
+        function getActionButtons(orderId, status) {
+            if (status === 'pending') {
+                return `<button class="action-btn prepare" onclick="updateStatus('${orderId}', 'preparing')">🔵 Start Preparing</button>`;
+            } else if (status === 'preparing') {
+                return `<button class="action-btn ready" onclick="updateStatus('${orderId}', 'ready')">🟢 Mark Ready</button>`;
+            } else if (status === 'ready') {
+                return `<button class="action-btn served" onclick="updateStatus('${orderId}', 'served')">⚪ Mark Served</button>`;
+            } else if (status === 'served') {
+                return `<button class="action-btn served" disabled style="opacity: 0.5; cursor: not-allowed;">✅ Served</button>`;
+            }
+            return '';
+        }
+
+        function updateOrderStatus(orderId, status) {
+            const card = document.getElementById(`order-${orderId}`);
+            if (card) {
+                card.className = `order-card ${status}`;
+                const badge = card.querySelector('.status-badge');
+                const statusLabels = {
+                    pending: '🟡 Pending',
+                    preparing: '🔵 Preparing',
+                    ready: '🟢 Ready',
+                    served: '⚪ Served'
+                };
+                badge.textContent = statusLabels[status] || status;
+                badge.className = `status-badge ${status}`;
+                
+                // Update buttons
+                const actions = card.querySelector('.order-actions');
+                if (actions) {
+                    const newButtons = getActionButtons(orderId, status);
+                    actions.innerHTML = newButtons;
+                }
+            }
+        }
+
+        function updateStatus(orderId, status) {
+            socket.emit('updateOrderStatus', { orderId, status });
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification-popup';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(() => notification.remove(), 500);
+            }, 3000);
+        }
+
+        function playSound() {
+            try {
+                const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+                audio.volume = 0.5;
+                audio.play().catch(() => {});
+            } catch (e) {
+                console.log('Sound not available');
+            }
+        }
+
+        // Refresh active orders every 30 seconds
+        setInterval(() => {
+            if (socket.connected) {
+                socket.emit('getActiveOrders');
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

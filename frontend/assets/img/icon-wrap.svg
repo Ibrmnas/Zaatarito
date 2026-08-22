@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100%" height="100%">
+  <!-- Wrap Body -->
+  <path d="M 28 20 
+           C 25 15, 35 10, 50 10 
+           C 65 10, 75 15, 72 20 
+           L 60 105 
+           C 58 112, 42 112, 40 105 Z" 
+        fill="#C58B43" 
+        stroke="#8D571C" 
+        stroke-width="2.5" />
+  
+  <!-- Fold / Seam Line -->
+  <path d="M 32 25 
+           Q 48 50, 42 104" 
+        fill="none" 
+        stroke="#8D571C" 
+        stroke-width="2" 
+        stroke-linecap="round" />
+
+  <!-- Top Opening Filling (Greenery/Meat hint) -->
+  <ellipse cx="50" cy="16" rx="18" ry="6" fill="#37A25E" />
+  <ellipse cx="48" cy="15" rx="10" ry="3" fill="#8D571C" />
+
+  <!-- Toasted Grill Marks / Details -->
+  <g stroke="#A26B2E" stroke-width="2" stroke-linecap="round" opacity="0.7">
+    <line x1="38" y1="40" x2="52" y2="35" />
+    <line x1="36" y1="58" x2="54" y2="52" />
+    <line x1="40" y1="76" x2="56" y2="70" />
+  </g>
+</svg>
