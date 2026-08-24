@@ -536,6 +536,22 @@ function connectToServer() {
                 }
             });
 
+            // ===== CASHIER RESET: CLEAR CART & CLOSE MODALS =====
+            socket.on('orderCleared', (data) => {
+                if (data.tableNumber === currentTableNumber) {
+                    cart = [];
+                    updateCartBar();
+                    closeCartModal();
+                    // Hide the confirmation popup if it's open
+                    const confirmation = document.getElementById('order-confirmation');
+                    if (confirmation) confirmation.setAttribute('hidden', '');
+                    // Hide the table orders modal
+                    const tableOrdersModal = document.getElementById('table-orders-modal');
+                    if (tableOrdersModal) tableOrdersModal.setAttribute('hidden', '');
+                    console.log(`🧹 Table #${currentTableNumber} cleared. Cart reset.`);
+                }
+            });
+
             socket.on('orderError', (data) => {
                 alert(`❌ Error: ${data.error}`);
             });
