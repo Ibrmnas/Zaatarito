@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zaatarito Cashier</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        .header h1 { color: #facc15; font-size: 2rem; }
+        .header .refresh-btn {
+            background: #facc15;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .table-card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 5px solid #22c55e;
+        }
+        .table-card.empty { border-left-color: #4a505b; opacity: 0.6; }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .table-number { font-size: 1.4rem; font-weight: 800; color: #facc15; }
+        .table-total { font-size: 1.4rem; font-weight: 800; }
+        .table-orders { margin: 10px 0; max-height: 200px; overflow-y: auto; }
+        .order-block { padding: 10px; border-bottom: 1px solid #222; margin-bottom: 10px; }
+        .order-id { color: #94a3b8; font-size: 0.8rem; margin-bottom: 5px; }
+        .order-item { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 2px 0; }
+        .pay-btn {
+            width: 100%;
+            padding: 12px;
+            background: #22c55e;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .pay-btn:hover { background: #16a34a; }
+        .total-tag { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💶 Cashier Dashboard</h1>
+        <button class="refresh-btn" onclick="loadTables()">🔄 Refresh</button>
+    </div>
+    <div id="tablesGrid" class="tables-grid">
+        <p>Loading tables...</p>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+
+        async function loadTables() {
+            const grid = document.getElementById('tablesGrid');
+            try {
+                const response = await fetch(`${API_URL}/cashier/tables`);
+                const data = await response.json();
+                
+                if (data.success && data.tables) {
+                    grid.innerHTML = '';
+                    const tables = data.tables;
+
+                    // Display tables 1 to 20 (or only the active ones)
+                    for (let i = 1; i <= 20; i++) {
+                        const tableData = tables[i];
+                        const card = document.createElement('div');
+                        card.className = `table-card ${!tableData ? 'empty' : ''}`;
+                        
+                        if (tableData) {
+                            const ordersHTML = tableData.orders.map(order => `
+                                <div class="order-block">
+                                    <div class="order-id">Order #${order.orderNumber}</div>
+                                    ${order.items.map(item => `
+                                        <div class="order-item">
+                                            <span>${item.quantity}x ${item.name}</span>
+                                            <span>€${(item.price * item.quantity).toFixed(2)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `).join('');
+
+                            card.innerHTML = `
+                                <div class="table-header">
+                                    <span class="table-number">Table #${i}</span>
+                                    <span class="table-total">€${tableData.total.toFixed(2)}</span>
+                                </div>
+                                <div class="table-orders">${ordersHTML}</div>
+                                <div class="total-tag">Total to Pay</div>
+                                <button class="pay-btn" onclick="markPaid(${i})">✅ Payment Received</button>
+                            `;
+                        } else {
+                            card.innerHTML = `
+                                <div class="table-header">
+                                    <span class="table-number">Table #${i}</span>
+                                    <span class="table-total">€0.00</span>
+                                </div>
+                                <div style="text-align: center; color: #94a3b8; margin: 20px 0;">No Active Orders</div>
+                            `;
+                        }
+                        grid.appendChild(card);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading tables:', error);
+                grid.innerHTML = `<p style="color: red;">Error loading tables. Please refresh.</p>`;
+            }
+        }
+
+        async function markPaid(tableNumber) {
+            if (!confirm(`Confirm payment for Table #${tableNumber}? This will clear the table.`)) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/cashier/table/${tableNumber}/paid`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert(`✅ Table #${tableNumber} paid and cleared!`);
+                    loadTables();
+                }
+            } catch (error) {
+                alert('Error marking table as paid.');
+            }
+        }
+
+        // Load tables on page load and every 15 seconds
+        window.onload = loadTables;
+        setInterval(loadTables, 15000);
+    </script>
+</body>
+</html>
