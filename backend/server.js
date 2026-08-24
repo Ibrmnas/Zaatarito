@@ -54,6 +54,9 @@ const frontendPath = path.join(__dirname, '..', 'frontend');
 // Serve files from the 'kitchen-display' folder located ONE level up from 'backend' (alongside frontend)
 const kitchenDisplayPath = path.join(__dirname, '..', 'kitchen-display');
 
+// Define the path to the root-level qr-codes.html file
+const qrCodesPath = path.join(__dirname, '..', 'qr-codes.html');
+
 // Serve the main frontend
 app.use(express.static(frontendPath));
 
@@ -384,17 +387,16 @@ app.post('/api/orders', async (req, res) => {
 });
 
 // ==================== QR CODES ROUTE ====================
-// Serve the root-level qr-codes.html file
-app.get('/qr-codes', (req, res) => {
-    const qrCodesPath = path.join(__dirname, '..', 'qr-codes.html');
+// Handle BOTH /qr-codes and /qr-codes.html
+app.get(['/qr-codes', '/qr-codes.html'], (req, res) => {
     res.sendFile(qrCodesPath);
 });
 
 // ===== CATCH-ALL FOR FRONTEND (Must be BEFORE the API 404) =====
 // This ensures that if a user opens the main URL, they get the HTML file
 app.get('*', (req, res, next) => {
-    // Skip API routes and kitchen-display routes
-    if (req.path.startsWith('/api/') || req.path.startsWith('/kitchen-display/') || req.path === '/qr-codes') {
+    // Skip API routes, kitchen-display routes, and qr-codes routes
+    if (req.path.startsWith('/api/') || req.path.startsWith('/kitchen-display/') || req.path.startsWith('/qr-codes')) {
         return next(); 
     }
     res.sendFile(path.join(frontendPath, 'index.html'));
