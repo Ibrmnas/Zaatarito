@@ -224,11 +224,11 @@ io.on('connection', (socket) => {
             let activeOrders = [];
             if (useInMemoryDB) {
                 activeOrders = orders.filter(o => 
-                    ['pending', 'preparing', 'ready'].includes(o.status)
+                    ['pending', 'preparing', 'ready', 'served'].includes(o.status)
                 );
             } else {
                 activeOrders = await Order.find({
-                    status: { $in: ['pending', 'preparing', 'ready'] }
+                    status: { $in: ['pending', 'preparing', 'ready', 'served'] }
                 }).sort({ orderTime: -1 });
             }
             socket.emit('activeOrders', activeOrders);
@@ -311,10 +311,10 @@ app.get('/api/cashier/tables', async (req, res) => {
     try {
         let activeOrders = [];
         if (useInMemoryDB) {
-            activeOrders = orders.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
+            activeOrders = orders.filter(o => ['pending', 'preparing', 'ready', 'served'].includes(o.status));
         } else {
             activeOrders = await Order.find({ 
-                status: { $in: ['pending', 'preparing', 'ready'] } 
+                status: { $in: ['pending', 'preparing', 'ready', 'served'] } 
             }).sort({ orderTime: -1 });
         }
 
@@ -342,13 +342,13 @@ app.post('/api/cashier/table/:tableNumber/paid', async (req, res) => {
         let deletedCount = 0;
         
         if (useInMemoryDB) {
-            const ordersToDelete = orders.filter(o => o.tableNumber === tableNumber && ['pending', 'preparing', 'ready'].includes(o.status));
+            const ordersToDelete = orders.filter(o => o.tableNumber === tableNumber && ['pending', 'preparing', 'ready', 'served'].includes(o.status));
             deletedCount = ordersToDelete.length;
-            orders = orders.filter(o => !(o.tableNumber === tableNumber && ['pending', 'preparing', 'ready'].includes(o.status)));
+            orders = orders.filter(o => !(o.tableNumber === tableNumber && ['pending', 'preparing', 'ready', 'served'].includes(o.status)));
         } else {
             const result = await Order.deleteMany({ 
                 tableNumber: tableNumber, 
-                status: { $in: ['pending', 'preparing', 'ready'] } 
+                status: { $in: ['pending', 'preparing', 'ready', 'served'] } 
             });
             deletedCount = result.deletedCount;
         }
