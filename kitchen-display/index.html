@@ -211,6 +211,13 @@
         }
 
         .action-btn.served:hover { background: #4b5563; }
+        
+        .action-btn.clear {
+            background: #dc2626;
+            color: #fff;
+        }
+        
+        .action-btn.clear:hover { background: #b91c1c; }
 
         .no-orders {
             text-align: center;
@@ -278,6 +285,7 @@
                 <button class="status-filter-btn" data-filter="pending">🟡 Pending</button>
                 <button class="status-filter-btn" data-filter="preparing">🔵 Preparing</button>
                 <button class="status-filter-btn" data-filter="ready">🟢 Ready</button>
+                <button class="status-filter-btn" data-filter="served">⚪ Served</button>
             </div>
         </div>
     </div>
@@ -421,7 +429,7 @@
             } else if (status === 'ready') {
                 return `<button class="action-btn served" onclick="updateStatus('${orderId}', 'served')">⚪ Mark Served</button>`;
             } else if (status === 'served') {
-                return `<button class="action-btn served" disabled style="opacity: 0.5; cursor: not-allowed;">✅ Served</button>`;
+                return `<button class="action-btn clear" onclick="removeOrder('${orderId}')">🗑️ Clear Order</button>`;
             }
             return '';
         }
@@ -451,6 +459,21 @@
 
         function updateStatus(orderId, status) {
             socket.emit('updateOrderStatus', { orderId, status });
+        }
+
+        // Remove an order from the display locally (after cashier payment)
+        function removeOrder(orderId) {
+            const card = document.getElementById(`order-${orderId}`);
+            if (card) {
+                card.remove();
+                
+                // If no orders remain, show empty message
+                if (ordersContainer.querySelectorAll('.order-card').length === 0) {
+                    ordersContainer.innerHTML = `
+                        <div class="no-orders">🎉 No active orders. Waiting for new orders...</div>
+                    `;
+                }
+            }
         }
 
         function showNotification(message) {
