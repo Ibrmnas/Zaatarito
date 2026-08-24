@@ -29,7 +29,9 @@ app.use(cors({
 }));
 
 // ===== Helmet =====
+// RELAXED TO ALLOW QR CODE IMAGES TO LOAD FROM EXTERNAL API
 app.use(helmet({
+    contentSecurityPolicy: false, // Disables strict CSP that blocks images
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
