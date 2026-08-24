@@ -505,7 +505,8 @@ document.addEventListener('click', (e) => {
 
 // ==================== BACKEND CONNECTION ====================
 
-const API_URL = 'http://localhost:5000/api';
+// UPDATED FOR RENDER: Use relative paths so it works on the same domain
+const API_URL = '/api'; 
 let socket = null;
 let currentTrackingOrderId = null;
 let trackingUpdateInterval = null;
@@ -514,7 +515,8 @@ let trackingUpdateInterval = null;
 function connectToServer() {
     try {
         if (typeof io !== 'undefined') {
-            socket = io('http://localhost:5000', {
+            // UPDATED FOR RENDER: Connect to the same domain (no hardcoded URL)
+            socket = io({
                 path: '/socket.io/',
                 transports: ['websocket', 'polling']
             });
@@ -658,7 +660,8 @@ async function fetchOrderStatus(orderId) {
     
     try {
         console.log('📡 Fetching order status for:', orderId);
-        const response = await fetch(`http://localhost:5000/api/orders/${orderId}`);
+        // UPDATED FOR RENDER: Use relative API URL
+        const response = await fetch(`${API_URL}/orders/${orderId}`);
         const data = await response.json();
         
         if (data.success && data.order) {
@@ -805,7 +808,8 @@ async function loadTableOrders() {
     if (currentTableNumber <= 0) return;
     
     try {
-        const response = await fetch('http://localhost:5000/api/orders');
+        // UPDATED FOR RENDER: Use relative API URL
+        const response = await fetch(`${API_URL}/orders`);
         const data = await response.json();
         
         if (data.success && data.orders) {
