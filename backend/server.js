@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const socketIo = require('socket.io');
 const http = require('http');
+const path = require('path'); // Added for serving the frontend
 require('dotenv').config();
 
 const app = express();
@@ -43,6 +44,11 @@ app.use('/api/', limiter);
 // ===== Body Parser =====
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ==================== STATIC FILES (FRONTEND) ====================
+// Serve files from the 'frontend' folder located one level up from 'backend'
+const frontendPath = path.join(__dirname, '..', 'frontend');
+app.use(express.static(frontendPath));
 
 // ==================== DATABASE CONNECTION ====================
 
@@ -367,8 +373,17 @@ app.post('/api/orders', async (req, res) => {
     }
 });
 
-// ===== 404 HANDLER =====
-app.use((req, res) => {
+// ===== CATCH-ALL FOR FRONTEND (Must be BEFORE the API 404) =====
+// This ensures that if a user opens the main URL, they get the HTML file
+app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+        return next(); // Skip this if it's an API route
+    }
+    res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
+// ===== 404 HANDLER (API only) =====
+app.use('/api/', (req, res) => {
     res.status(404).json({ 
         success: false, 
         error: 'Endpoint not found' 
