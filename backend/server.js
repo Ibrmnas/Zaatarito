@@ -383,11 +383,18 @@ app.post('/api/orders', async (req, res) => {
     }
 });
 
+// ==================== QR CODES ROUTE ====================
+// Serve the root-level qr-codes.html file
+app.get('/qr-codes', (req, res) => {
+    const qrCodesPath = path.join(__dirname, '..', 'qr-codes.html');
+    res.sendFile(qrCodesPath);
+});
+
 // ===== CATCH-ALL FOR FRONTEND (Must be BEFORE the API 404) =====
 // This ensures that if a user opens the main URL, they get the HTML file
 app.get('*', (req, res, next) => {
     // Skip API routes and kitchen-display routes
-    if (req.path.startsWith('/api/') || req.path.startsWith('/kitchen-display/')) {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/kitchen-display/') || req.path === '/qr-codes') {
         return next(); 
     }
     res.sendFile(path.join(frontendPath, 'index.html'));
