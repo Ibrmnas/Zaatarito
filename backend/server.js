@@ -47,7 +47,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ==================== STATIC FILES (FRONTEND) ====================
 // Serve files from the 'frontend' folder located one level up from 'backend'
-const frontendPath = path.join(__dirname, '..', '..', 'frontend');
+const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));
 
 // ==================== DATABASE CONNECTION ====================
