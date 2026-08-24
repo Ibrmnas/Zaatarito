@@ -287,7 +287,7 @@
     </div>
 
     <audio id="orderSound" preload="auto">
-        <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
+        <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
     </audio>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -297,11 +297,8 @@
         const orderSound = document.getElementById('orderSound');
         const statusEl = document.getElementById('connection-status');
 
-        // Authentication PIN
-        const KITCHEN_PIN = '1234';
-
-        // Connect to server
-        const socket = io('http://localhost:5000', {
+        // Connect to server (automatically connects to the same domain it's hosted on)
+        const socket = io({
             path: '/socket.io/'
         });
 
@@ -330,18 +327,7 @@
             console.log('Connected to server');
             statusEl.textContent = '● Connected';
             statusEl.style.color = '#22c55e';
-            socket.emit('authenticateKitchen', KITCHEN_PIN);
-        });
-
-        socket.on('kitchenAuthenticated', (data) => {
-            if (data.success) {
-                console.log('✅ Kitchen authenticated');
-                socket.emit('getActiveOrders');
-            } else {
-                console.error('❌ Kitchen authentication failed:', data.error);
-                statusEl.textContent = '● Authentication Failed';
-                statusEl.style.color = '#ef4444';
-            }
+            socket.emit('getActiveOrders');
         });
 
         socket.on('connect_error', (error) => {
@@ -386,8 +372,10 @@
 
         function createOrderCard(order) {
             const div = document.createElement('div');
+            // For MongoDB, the ID is _id, for in-memory it's id
+            const orderId = order._id || order.id;
             div.className = `order-card ${order.status}`;
-            div.id = `order-${order._id || order.id}`;
+            div.id = `order-${orderId}`;
 
             const itemsHTML = (order.items || []).map(item => `
                 <li>
@@ -403,7 +391,7 @@
                 served: '⚪ Served'
             };
 
-            const actionButtons = getActionButtons(order._id || order.id, order.status);
+            const actionButtons = getActionButtons(orderId, order.status);
 
             div.innerHTML = `
                 <div class="order-header">
@@ -480,7 +468,7 @@
 
         function playSound() {
             try {
-                const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+                const audio = document.getElementById('orderSound');
                 audio.volume = 0.5;
                 audio.play().catch(() => {});
             } catch (e) {
