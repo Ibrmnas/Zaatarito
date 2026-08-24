@@ -87,44 +87,19 @@
     <div class="qr-grid" id="qrGrid"></div>
     
     <script>
-        // Standalone QR Code Generator (No external libraries needed!)
-        (function() {
-            const tableCount = 20;
-            const baseUrl = "https://zaatarito.onrender.com/?table=";
-            const qrGrid = document.getElementById('qrGrid');
-
-            // A simple QR code algorithm using canvas
-            // (This is a compact version of a standard generator)
-            function generateQRCode(canvas, text) {
-                const qr = qrcode(0, 'M');
-                qr.addData(text);
-                qr.make();
-                canvas.width = qr.getModuleCount() * 4;
-                canvas.height = qr.getModuleCount() * 4;
-                canvas.style.width = '160px';
-                canvas.style.height = '160px';
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#000000';
-                for (let row = 0; row < qr.getModuleCount(); row++) {
-                    for (let col = 0; col < qr.getModuleCount(); col++) {
-                        if (qr.isDark(row, col)) {
-                            ctx.fillRect(col * 4, row * 4, 4, 4);
-                        }
-                    }
-                }
-            }
-
-            // Minimal QR code library (qrcode-generator by Kazuhiko Arase)
-            function qrcode(typeNumber, errorCorrectionLevel) {
+        // ==========================================
+        // PURE JAVASCRIPT QR CODE GENERATOR
+        // (No external libraries needed - works 100% offline)
+        // ==========================================
+        var qrcode = function() {
+            // This is a minimal, fully functional QR code generator
+            var QRCode = function(typeNumber, errorCorrectionLevel) {
                 var PAD0 = 0xEC, PAD1 = 0x11;
                 var _typeNumber = typeNumber;
                 var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
                 var _modules = null, _moduleCount = 0, _dataCache = null, _dataList = [];
                 var _this = {};
-                var _this = {};
-                _this.addData = function(data) { _dataList.push([data]); _dataCache = null; };
+                _this.addData = function(data) { _dataList.push(data); _dataCache = null; };
                 _this.isDark = function(row, col) { if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) throw new Error(row + ',' + col); return _modules[row][col]; };
                 _this.getModuleCount = function() { return _moduleCount; };
                 _this.make = function() { makeImpl(false, getBestMaskPattern()); };
@@ -165,4 +140,80 @@
                 function setupTypeInfo(test, maskPattern) { var data = (_errorCorrectionLevel << 3) | maskPattern; var bits = QRUtil.getBCHTypeInfo(data); for (var i = 0; i < 15; i++) { var mod = (!test && ((bits >> i) & 1) == 1); if (i < 6) { _modules[i][8] = mod; } else if (i < 8) { _modules[i + 1][8] = mod; } else { _modules[_moduleCount - 15 + i][8] = mod; } } for (var i = 0; i < 15; i++) { var mod = (!test && ((bits >> i) & 1) == 1); if (i < 8) { _modules[8][_moduleCount - i - 1] = mod; } else if (i < 9) { _modules[8][15 - i - 1 + 1] = mod; } else { _modules[8][15 - i - 1] = mod; } } _modules[_moduleCount - 8][8] = (!test); }
                 function createData(typeNumber, errorCorrectionLevel, dataList) { var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel); var buffer = new QRBitBuffer(); for (var i = 0; i < dataList.length; i++) { var data = dataList[i]; buffer.put(data.mode, 4); buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber)); data.write(buffer); } var totalDataCount = 0; for (var i = 0; i < rsBlocks.length; i++) { totalDataCount += rsBlocks[i].dataCount; } if (buffer.getLengthInBits() > totalDataCount * 8) { throw new Error('code length overflow. (' + buffer.getLengthInBits() + '>' + totalDataCount * 8 + ')'); } if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) { buffer.put(0, 4); } while (buffer.getLengthInBits() % 8 != 0) { buffer.putBit(false); } while (true) { if (buffer.getLengthInBits() >= totalDataCount * 8) break; buffer.put(PAD0, 8); if (buffer.getLengthInBits() >= totalDataCount * 8) break; buffer.put(PAD1, 8); } return createBytes(buffer, rsBlocks); }
                 function createBytes(buffer, rsBlocks) { var offset = 0; var maxDcCount = 0; var maxEcCount = 0; var dcdata = new Array(rsBlocks.length); var ecdata = new Array(rsBlocks.length); for (var r = 0; r < rsBlocks.length; r++) { var dcCount = rsBlocks[r].dataCount; var ecCount = rsBlocks[r].totalCount - dcCount; maxDcCount = Math.max(maxDcCount, dcCount); maxEcCount = Math.max(maxEcCount, ecCount); dcdata[r] = new Array(dcCount); for (var i = 0; i < dcdata[r].length; i++) { dcdata[r][i] = 0xff & buffer.buffer[i + offset]; } offset += dcCount; var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount); var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1); var modPoly = rawPoly.mod(rsPoly); ecdata[r] = new Array(rsPoly.getLength() - 1); for (var i = 0; i < ecdata[r].length; i++) { var modIndex = i + modPoly.getLength() - ecdata[r].length; ecdata[r][i] = (modIndex >= 0) ? modPoly.get(modIndex) : 0; } } var totalCodeCount = 0; for (var i = 0; i < rsBlocks.length; i++) { totalCodeCount += rsBlocks[i].totalCount; } var data = new Array(totalCodeCount); var index = 0; for (var i = 0; i < maxDcCount; i++) { for (var r = 0; r < rsBlocks.length; r++) { if (i < dcdata[r].length) { data[index++] = dcdata[r][i]; } } } for (var i = 0; i < maxEcCount; i++) { for (var r = 0; r < rsBlocks.length; r++) { if (i < ecdata[r].length) { data[index++] = ecdata[r][i]; } } } return data; }
-                var QRRSBlock = { RS_BLOCK_TABLE: [[1, 26, 19], [1, 26, 16], [1, 26, 13], [1, 26, 9], [1, 44, 34], [1, 44, 28], [1, 44, 22], [1, 44, 16], [1, 58, 43], [1, 58, 37], [1, 58, 29], [1, 58, 25], [1, 64, 49], [1, 64, 45], [1, 64, 39], [1, 64, 33], [1, 86, 60], [1, 86, 54], [2, 86, 44], [2, 86, 38], [2, 98, 69], [1, 98, 63], [2, 98, 53], [2, 98, 47], [2, 121, 82], [1, 121, 76], [2, 121, 61], [2, 121, 55], [2, 146, 100], [1, 146, 94], [2, 146, 78], [2, 146, 70], [2, 170, 121], [2, 170, 115], [2, 170, 98], [2, 170, 88], [2, 196, 141], [2, 196, 135], [4, 196, 109], [4, 196, 95], [2, 224, 159], [4, 224, 153], [4, 224, 123], [4, 224, 111], [4, 252, 177], [4, 252, 171], [4, 252, 139], [4, 252, 127], [4, 288, 200], [4, 288, 194], [4, 288, 148], [4, 288, 135], [6, 324, 226], [4, 324, 220], [6, 324, 170], [6, 324, 157], [6, 360, 255], [4, 360, 249], [6, 360, 183], [6, 360, 167], [8, 396, 298], [8, 396, 292], [8, 396, 212], [8, 396, 199], [10, 452, 338], [8, 452, 332], [10, 452, 252], [10, 452, 241], [12, 532, 383], [10, 532, 377], [12, 532, 288], [12, 532, 257], [16, 596, 433], [12, 596, 427], [16, 596, 329], [16, 596, 281], [20, 660, 490], [18, 660, 484], [20, 660, 355], [20, 660, 311], [24, 724, 546], [20, 724, 540], [24, 724, 399], [24, 724, 343], [28, 788, 610], [24, 788, 604], [28, 788, 454], [28, 788, 429], [32, 852, 681], [28, 852, 675], [32, 852, 500], [32, 852, 457], [36, 916, 752], [32, 916, 746], [36, 916, 552], [36, 916, 497], [40, 1000, 832], [36, 1000, 826], [40, 1000, 614], [40, 1000, 549], [44, 1092, 937], [40, 1092, 931], [44, 1092, 695], [44, 1092, 631], [48, 1200, 1059], [44, 1200, 1053], [48, 1200, 771], [48, 1200, 681], [56, 1320, 1200], [52, 1320, 1194], [56, 1320, 886], [56, 1320, 794], [64, 1452, 1332], [60, 1452, 1326], [64, 1452, 978], [64, 1452, 902], [72, 1596, 1456], [68, 1596, 1450], [72, 1596, 1066], [72, 1596, 944], [80, 1748, 1594], [76, 1748, 1588], [80, 1748, 1170], [80, 1748, 1070], [88, 1904, 1766], [84, 1904, 1760], [88, 1904, 1304], [88, 1904, 1120], [96, 2108, 1950], [92, 2108, 1944], [96, 2108, 1448], [96, 2108, 1240], [104, 2300, 2166], [100, 2300, 2160], [104, 2300, 1606], [104, 2300, 1362], [112, 2444, 2332], [108, 2444, 2326], [112, 2444, 1732], [112, 2444, 1450], [120, 2680, 2578], [116, 2680, 2572], [120, 2680, 1900], [120, 2680, 1606], [128, 2920, 2876], [124, 2920, 2870], [128, 2920, 2104], [128, 2920, 1784], [136, 3188, 3124], [132, 3188, 3118], [136, 3188, 2300], [136, 3188, 1880], [144, 3452, 3406], [140, 3452, 3400], [144, 3452, 2530], [144, 3452, 1984], [152, 3748, 3712], [148, 3748, 3706], [152, 3748, 2740], [152, 3748, 2228], [160, 4036, 4004], [156, 4036, 3998], [160, 4036, 2920], [160, 4036, 231
+                var QRRSBlock = { RS_BLOCK_TABLE: [[1, 26, 19], [1, 26, 16], [1, 26, 13], [1, 26, 9], [1, 44, 34], [1, 44, 28], [1, 44, 22], [1, 44, 16], [1, 58, 43], [1, 58, 37], [1, 58, 29], [1, 58, 25], [1, 64, 49], [1, 64, 45], [1, 64, 39], [1, 64, 33], [1, 86, 60], [1, 86, 54], [2, 86, 44], [2, 86, 38], [2, 98, 69], [1, 98, 63], [2, 98, 53], [2, 98, 47], [2, 121, 82], [1, 121, 76], [2, 121, 61], [2, 121, 55], [2, 146, 100], [1, 146, 94], [2, 146, 78], [2, 146, 70], [2, 170, 121], [2, 170, 115], [2, 170, 98], [2, 170, 88], [2, 196, 141], [2, 196, 135], [4, 196, 109], [4, 196, 95], [2, 224, 159], [4, 224, 153], [4, 224, 123], [4, 224, 111], [4, 252, 177], [4, 252, 171], [4, 252, 139], [4, 252, 127], [4, 288, 200], [4, 288, 194], [4, 288, 148], [4, 288, 135], [6, 324, 226], [4, 324, 220], [6, 324, 170], [6, 324, 157], [6, 360, 255], [4, 360, 249], [6, 360, 183], [6, 360, 167], [8, 396, 298], [8, 396, 292], [8, 396, 212], [8, 396, 199], [10, 452, 338], [8, 452, 332], [10, 452, 252], [10, 452, 241], [12, 532, 383], [10, 532, 377], [12, 532, 288], [12, 532, 257], [16, 596, 433], [12, 596, 427], [16, 596, 329], [16, 596, 281], [20, 660, 490], [18, 660, 484], [20, 660, 355], [20, 660, 311], [24, 724, 546], [20, 724, 540], [24, 724, 399], [24, 724, 343], [28, 788, 610], [24, 788, 604], [28, 788, 454], [28, 788, 429], [32, 852, 681], [28, 852, 675], [32, 852, 500], [32, 852, 457], [36, 916, 752], [32, 916, 746], [36, 916, 552], [36, 916, 497], [40, 1000, 832], [36, 1000, 826], [40, 1000, 614], [40, 1000, 549], [44, 1092, 937], [40, 1092, 931], [44, 1092, 695], [44, 1092, 631], [48, 1200, 1059], [44, 1200, 1053], [48, 1200, 771], [48, 1200, 681], [56, 1320, 1200], [52, 1320, 1194], [56, 1320, 886], [56, 1320, 794], [64, 1452, 1332], [60, 1452, 1326], [64, 1452, 978], [64, 1452, 902], [72, 1596, 1456], [68, 1596, 1450], [72, 1596, 1066], [72, 1596, 944], [80, 1748, 1594], [76, 1748, 1588], [80, 1748, 1170], [80, 1748, 1070], [88, 1904, 1766], [84, 1904, 1760], [88, 1904, 1304], [88, 1904, 1120], [96, 2108, 1950], [92, 2108, 1944], [96, 2108, 1448], [96, 2108, 1240], [104, 2300, 2166], [100, 2300, 2160], [104, 2300, 1606], [104, 2300, 1362], [112, 2444, 2332], [108, 2444, 2326], [112, 2444, 1732], [112, 2444, 1450], [120, 2680, 2578], [116, 2680, 2572], [120, 2680, 1900], [120, 2680, 1606], [128, 2920, 2876], [124, 2920, 2870], [128, 2920, 2104], [128, 2920, 1784], [136, 3188, 3124], [132, 3188, 3118], [136, 3188, 2300], [136, 3188, 1880], [144, 3452, 3406], [140, 3452, 3400], [144, 3452, 2530], [144, 3452, 1984], [152, 3748, 3712], [148, 3748, 3706], [152, 3748, 2740], [152, 3748, 2228], [160, 4036, 4004], [156, 4036, 3998], [160, 4036, 2920], [160, 4036, 2312] ],
+                    getRSBlocks: function(typeNumber, errorCorrectionLevel) { var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectionLevel); if (rsBlock == undefined) throw new Error('bad rs block @ typeNumber:' + typeNumber + '/errorCorrectionLevel:' + errorCorrectionLevel); var length = rsBlock.length / 3; var list = []; for (var i = 0; i < length; i++) { var count = rsBlock[i * 3 + 0]; var totalCount = rsBlock[i * 3 + 1]; var dataCount = rsBlock[i * 3 + 2]; for (var j = 0; j < count; j++) { list.push(new QRRSBlock(totalCount, dataCount)); } } return list; },
+                    getRsBlockTable: function(typeNumber, errorCorrectionLevel) { switch (errorCorrectionLevel) { case QRErrorCorrectionLevel.L: return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0]; case QRErrorCorrectionLevel.M: return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1]; case QRErrorCorrectionLevel.Q: return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2]; case QRErrorCorrectionLevel.H: return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3]; default: return undefined; } }
+                };
+                function QRRSBlock(totalCount, dataCount) { this.totalCount = totalCount; this.dataCount = dataCount; }
+                QRRSBlock.prototype = { getTotalCount: function() { return this.totalCount; }, getDataCount: function() { return this.dataCount; } };
+                function mapData(data, maskPattern) { var inc = -1; var row = _moduleCount - 1; var bitIndex = 7; var byteIndex = 0; for (var col = _moduleCount - 1; col > 0; col -= 2) { if (col == 6) col--; while (true) { for (var c = 0; c < 2; c++) { if (_modules[row][col - c] == null) { var dark = false; if (byteIndex < data.length) dark = (((data[byteIndex] >>> bitIndex) & 1) == 1); var mask = QRUtil.getMask(maskPattern, row, col - c); if (mask) dark = !dark; _modules[row][col - c] = dark; bitIndex--; if (bitIndex == -1) { byteIndex++; bitIndex = 7; } } } row += inc; if (row < 0 || _moduleCount <= row) { row -= inc; inc = -inc; break; } } } }
+                // UTF-8 support
+                if (typeof String.prototype.utf8Encode == 'undefined') {
+                    String.prototype.utf8Encode = function() { return unescape(encodeURIComponent(this)); };
+                }
+                _this.addData = function(data) { _dataList.push(new QR8bitByte(data.utf8Encode())); _dataCache = null; };
+                return _this;
+            };
+            return { create: function(typeNumber, errorCorrectionLevel) { return new QRCode(typeNumber, errorCorrectionLevel); } };
+        }();
+
+        // ==========================================
+        // GENERATE THE QR CODES
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableCount = 20;
+            const baseUrl = "https://zaatarito.onrender.com/?table=";
+            const qrGrid = document.getElementById('qrGrid');
+
+            for (let i = 1; i <= tableCount; i++) {
+                const card = document.createElement('div');
+                card.className = 'qr-card';
+                
+                // Create canvas element for QR code
+                const canvas = document.createElement('canvas');
+                canvas.id = `qr-${i}`;
+                canvas.width = 180;
+                canvas.height = 180;
+                canvas.style.width = '160px';
+                canvas.style.height = '160px';
+                
+                // Generate QR code
+                const qr = qrcode.create(0, 'M');
+                qr.addData(`${baseUrl}${i}`);
+                qr.make();
+                
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#000000';
+                
+                const moduleCount = qr.getModuleCount();
+                const moduleSize = canvas.width / moduleCount;
+                
+                for (let row = 0; row < moduleCount; row++) {
+                    for (let col = 0; col < moduleCount; col++) {
+                        if (qr.isDark(row, col)) {
+                            ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize);
+                        }
+                    }
+                }
+                
+                // Add text elements
+                const label = document.createElement('div');
+                label.className = 'table-label';
+                label.textContent = `🍽️ Table #${i}`;
+                
+                const url = document.createElement('div');
+                url.className = 'table-url';
+                url.textContent = `Scan to order: ${baseUrl}${i}`;
+                
+                card.appendChild(canvas);
+                card.appendChild(label);
+                card.appendChild(url);
+                
+                qrGrid.appendChild(card);
+            }
+        });
+    </script>
+</body>
+</html>
