@@ -48,7 +48,15 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // ==================== STATIC FILES (FRONTEND) ====================
 // Serve files from the 'frontend' folder located one level up from 'backend'
 const frontendPath = path.join(__dirname, '..', 'frontend');
+
+// Serve files from the 'kitchen-display' folder located ONE level up from 'backend' (alongside frontend)
+const kitchenDisplayPath = path.join(__dirname, '..', 'kitchen-display');
+
+// Serve the main frontend
 app.use(express.static(frontendPath));
+
+// Serve the kitchen display specifically
+app.use('/kitchen-display', express.static(kitchenDisplayPath));
 
 // ==================== DATABASE CONNECTION ====================
 
@@ -376,8 +384,9 @@ app.post('/api/orders', async (req, res) => {
 // ===== CATCH-ALL FOR FRONTEND (Must be BEFORE the API 404) =====
 // This ensures that if a user opens the main URL, they get the HTML file
 app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api/')) {
-        return next(); // Skip this if it's an API route
+    // Skip API routes and kitchen-display routes
+    if (req.path.startsWith('/api/') || req.path.startsWith('/kitchen-display/')) {
+        return next(); 
     }
     res.sendFile(path.join(frontendPath, 'index.html'));
 });
