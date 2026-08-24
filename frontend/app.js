@@ -351,6 +351,7 @@ function setLanguage(lang) {
   }
 }
 
+// ==================== UPDATED ADD TO CART WITH QUANTITY ====================
 function addToCart(itemId, optionType = null, optionPrice = null, customName = null) {
   let selectedItem = null;
   
@@ -361,47 +362,66 @@ function addToCart(itemId, optionType = null, optionPrice = null, customName = n
     });
   }
 
+  let nameObj = null;
+  let price = 0;
+  let uniqueId = itemId;
+
   if (selectedItem) {
     if (optionType && optionPrice) {
-      cart.push({
-        id: `${selectedItem.id}-${optionType}`,
-        name: {
-          en: `${selectedItem.en.name} (${optionType.toUpperCase()})`,
-          it: `${selectedItem.it.name} (${optionType.toUpperCase()})`
-        },
-        price: parseFloat(optionPrice)
-      });
+      uniqueId = `${selectedItem.id}-${optionType}`;
+      nameObj = {
+        en: `${selectedItem.en.name} (${optionType.toUpperCase()})`,
+        it: `${selectedItem.it.name} (${optionType.toUpperCase()})`
+      };
+      price = parseFloat(optionPrice);
     } else {
-      cart.push({
-        id: selectedItem.id,
-        name: {
-          en: selectedItem.en.name,
-          it: selectedItem.it.name
-        },
-        price: selectedItem.price || 0
-      });
+      nameObj = {
+        en: selectedItem.en.name,
+        it: selectedItem.it.name
+      };
+      price = selectedItem.price || 0;
     }
   } else {
-    const price = optionPrice ? parseFloat(optionPrice) : 0;
+    const priceVal = optionPrice ? parseFloat(optionPrice) : 0;
     const nameStr = customName || itemId;
-    
+    nameObj = { en: nameStr, it: nameStr };
+    price = priceVal;
+  }
+
+  // CHECK IF ITEM ALREADY EXISTS IN CART
+  const existingItem = cart.find(item => item.id === uniqueId);
+  if (existingItem) {
+    // If it exists, just increase the quantity
+    existingItem.quantity += 1;
+  } else {
+    // If not, add it with quantity 1
     cart.push({
-      id: itemId,
-      name: {
-        en: nameStr,
-        it: nameStr
-      },
-      price: price
+      id: uniqueId,
+      name: nameObj,
+      price: price,
+      quantity: 1
     });
   }
 
   updateCartBar();
 }
 
+// ==================== UPDATED REMOVE FROM CART WITH QUANTITY ====================
 function removeFromCart(index) {
-  cart.splice(index, 1);
+  const item = cart[index];
+  
+  if (item && item.quantity > 1) {
+    // Reduce quantity
+    item.quantity -= 1;
+    // Refresh the UI to show the new quantity
+    renderCartModal();
+  } else {
+    // Remove the item completely
+    cart.splice(index, 1);
+    renderCartModal();
+  }
+
   updateCartBar();
-  renderCartModal();
 
   if (cart.length === 0) {
     closeCartModal();
@@ -415,8 +435,9 @@ function updateCartBar() {
 
   if (!countElement || !totalElement || !checkoutBtn) return;
 
-  const totalItems = cart.length;
-  const totalPrice = cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
+  // Calculate total items based on quantity
+  const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  const totalPrice = cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0).toFixed(2);
 
   countElement.textContent = `${totalItems} ${translations[currentLang].items}`;
   totalElement.textContent = `${totalPrice} €`;
@@ -446,6 +467,7 @@ function closeCartModal() {
   if (cartModal) cartModal.setAttribute('hidden', '');
 }
 
+// ==================== UPDATED RENDER CART MODAL ====================
 function renderCartModal() {
   const modalList = document.getElementById('cart-items-list');
   const modalTotalPrice = document.getElementById('modal-total-price');
@@ -470,17 +492,19 @@ function renderCartModal() {
       itemName = item.name;
     }
 
+    const quantity = item.quantity || 1; // Default to 1 if missing
+
     const row = document.createElement('div');
     row.className = 'cart-row';
     row.innerHTML = `
-      <span class="cart-row-title">${itemName}</span>
-      <span class="cart-row-price">${item.price.toFixed(2)} €</span>
+      <span class="cart-row-title">${quantity > 1 ? quantity + 'x ' : ''}${itemName}</span>
+      <span class="cart-row-price">${(item.price * quantity).toFixed(2)} €</span>
       <button class="remove-item-btn" type="button" onclick="removeFromCart(${index})">${translations[currentLang].remove}</button>
     `;
     modalList.appendChild(row);
   });
 
-  const totalPrice = cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
+  const totalPrice = cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0).toFixed(2);
   if (modalTotalPrice) modalTotalPrice.textContent = `${totalPrice} €`;
 }
 
@@ -947,7 +971,7 @@ function trackOrderById(orderId) {
     openTrackingModal(orderId);
 }
 
-// Send order to backend
+// ==================== UPDATED SEND ORDER TO KITCHEN ====================
 async function sendOrderToKitchen() {
     if (cart.length === 0) {
         alert(translations[currentLang].emptyCart);
@@ -956,13 +980,13 @@ async function sendOrderToKitchen() {
 
     const badgeText = document.getElementById('table-badge').textContent;
     const tableNumber = parseInt(badgeText.replace(/[^0-9]/g, '')) || 0;
-    const totalAmount = cart.reduce((sum, item) => sum + item.price, 0);
+    const totalAmount = cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
 
     const orderData = {
         items: cart.map(item => ({
             name: item.name[currentLang] || item.name,
             price: item.price,
-            quantity: 1
+            quantity: item.quantity || 1 // <--- UPDATED THIS LINE
         })),
         tableNumber: tableNumber,
         totalAmount: totalAmount,
